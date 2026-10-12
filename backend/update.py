@@ -31,17 +31,22 @@ sql_db = sql_connector.cursor()
 with open('database/scripts/create.sql') as db_init:
     sql_db.executescript(db_init.read())
 
-with open('storage/source.txt', 'r') as izvor:
-
-    for i in izvor:
-        if i[0] == '#':
-            continue
-        naziv = i.replace('\n','').split('/')[-1]
-        urllib.request.urlretrieve(i, f'storage/{naziv}.pdf')
-        sql_db.execute(f"INSERT OR REPLACE INTO izvorni_dokument (id, url, naziv, dopremljeno, obradjeno, checksum) \
-        VALUES ((SELECT id FROM izvorni_dokument WHERE url = '{i}'), '{i}', '{naziv}', {int(time.time())}, \
-        (SELECT obradjeno FROM izvorni_dokument WHERE url = '{i}'), (SELECT checksum FROM izvorni_dokument WHERE url = '{i}'))")
-        
+for name, link in names_links:
+    if link[0] == '#':
+        continue
+    pdf_name = link.split('/')[-1].replace('.pdf','').lower()
+    urllib.request.urlretrieve(link, f'storage/{pdf_name}.pdf')
+    sql_db.execute(
+        """
+        INSERT INTO izvorni_dokument (url, naziv, pdf_naziv, dopremljeno, obradjeno, checksum)
+        VALUES (?, ?, ?, ?, 0, NULL)
+        ON CONFLICT(naziv) DO UPDATE SET
+            url = excluded.url,
+            pdf_naziv = excluded.pdf_naziv,
+            dopremljeno = excluded.dopremljeno;
+        """,
+        (link, name, pdf_name, int(time.time()))
+    )
 
 sql_connector.commit()
 sql_connector.close()

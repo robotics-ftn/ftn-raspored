@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS izvorni_dokument (
     id INTEGER PRIMARY KEY UNIQUE,
     url TEXT NOT NULL UNIQUE,
     naziv TEXT NOT NULL UNIQUE,
+    pdf_naziv TEXT NOT NULL UNIQUE,
     dopremljeno INTEGER DEFAULT 0,
     obradjeno INTEGER DEFAULT 0,
     checksum INTEGER DEFAULT NULL
