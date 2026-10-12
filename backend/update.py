@@ -3,6 +3,27 @@
 import urllib.request
 import sqlite3
 import time
+import html
+import subprocess
+
+cmd = """curl -s "https://ftn.uns.ac.rs/raspored-i-realizacija-2/" | awk '/Raspored nastave/,/<\/details>/' | grep -oP 'href="\\K[^"]*">[^<]+' | sed 's/">/ -> /'"""
+output = subprocess.check_output(cmd, 
+                                shell=True, 
+                                text=True,
+                                stderr=subprocess.DEVNULL)
+
+names_links = []
+for line in output.strip().split("\n"):
+    if " -> " in line:
+        link, name = line.split(" -> ")
+        names_links.append((html.unescape(name), link))
+
+with open("storage/source.txt", "w", encoding="utf-8") as f:
+    for link in names_links:
+        f.write(link[1] + "\n")
+
+for line in names_links:
+    print(f"{line[0]} -> {line[1]}")
 
 sql_connector = sqlite3.connect('database/raspored.db')
 sql_db = sql_connector.cursor()
