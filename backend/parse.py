@@ -7,10 +7,9 @@ from datetime import datetime
 import time
 import sys
 import hashlib
+import cyrtranslit
 
-days = ['P O N E D E L J A K', 'U T O R A K',
-        'S R E D A', 'Č E T V R T A K', 'P E T A K',
-        'S U B O T A', 'N E D E L J A']
+days = ['P O N', 'U T O', 'S R E', 'Č E T', 'P E T', 'S U B', 'N E D']
 clas = ['Pred.', 'lab.vežbe', 'aud.vežbe', 'rač.vežbe', 'arh.vežbe', 'um.vežbe']
 wildcard = 'SVI'
 
@@ -44,6 +43,8 @@ def parsePage(p):
     db_entries = []
 
     words = p.extract_words()
+    for w in words:
+        w['text'] = cyrtranslit.to_latin(w['text'], 'sr')
 
     study_program = ''
     study_groups = []
@@ -103,6 +104,11 @@ def parsePage(p):
         study_groups.append(wildcard)
 
     tables = p.extract_tables()
+    for t_idx, table in enumerate(tables):
+        for r_idx, row in enumerate(table):
+            for c_idx, val in enumerate(row):
+                if val is not None:
+                    tables[t_idx][r_idx][c_idx] = cyrtranslit.to_latin(val, 'sr')
 
     day = 0
     block_classes = False
@@ -114,8 +120,11 @@ def parsePage(p):
 
             class_curr = tables[t][c]
 
-            if class_curr[0] in days:
-                day = days.index(class_curr[0])
+            if class_curr[0] == '' or class_curr[0] == None or len(class_curr) != 7:
+                continue
+
+            if class_curr[0].startswith(tuple(days)):
+                day = days.index(class_curr[0][:5])
                 block_classes = False
                 continue
 
@@ -273,7 +282,7 @@ sql_db = sql_connector.cursor()
 with open('database/scripts/create.sql', 'r') as db_init:
     sql_db.executescript(db_init.read())
 
-sql_db.execute("SELECT id, naziv, checksum FROM izvorni_dokument")
+sql_db.execute("SELECT id, pdf_naziv, checksum FROM izvorni_dokument")
 files = sql_db.fetchall()
 
 sql_db.executemany("INSERT OR IGNORE INTO vrsta_nastave \

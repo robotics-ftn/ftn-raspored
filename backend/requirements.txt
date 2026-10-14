@@ -1,1 +1,2 @@
 pdfplumber>=0.5.16
+cyrtranslit==1.2.0
