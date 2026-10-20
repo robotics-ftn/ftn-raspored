@@ -31,21 +31,33 @@ sql_db = sql_connector.cursor()
 with open('database/scripts/create.sql') as db_init:
     sql_db.executescript(db_init.read())
 
+try:
+    with open('storage/excluded.txt', 'r', encoding='utf-8') as f:
+        excluded_names = [line.strip() for line in f if line.strip()]
+except FileNotFoundError:
+    excluded_names = []
+
 for name, link in names_links:
     if link[0] == '#':
         continue
     pdf_name = link.split('/')[-1].replace('.pdf','').lower()
     urllib.request.urlretrieve(link, f'storage/{pdf_name}.pdf')
+    skip = False
+    if name in excluded_names:
+        skip = True
     sql_db.execute(
         """
-        INSERT INTO izvorni_dokument (url, naziv, pdf_naziv, dopremljeno, obradjeno, checksum)
-        VALUES (?, ?, ?, ?, 0, NULL)
+        INSERT INTO izvorni_dokument (url, naziv, pdf_naziv, dopremljeno, preskoci)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(naziv) DO UPDATE SET
             url = excluded.url,
             pdf_naziv = excluded.pdf_naziv,
-            dopremljeno = excluded.dopremljeno;
+            dopremljeno = excluded.dopremljeno,
+            preskoci = excluded.preskoci,
+            obradjeno = 0,
+            checksum = NULL;
         """,
-        (link, name, pdf_name, int(time.time()))
+        (link, name, pdf_name, int(time.time()), skip)
     )
 
 sql_connector.commit()

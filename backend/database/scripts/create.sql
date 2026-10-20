@@ -85,5 +85,6 @@ CREATE TABLE IF NOT EXISTS izvorni_dokument (
     pdf_naziv TEXT NOT NULL UNIQUE,
     dopremljeno INTEGER DEFAULT 0,
     obradjeno INTEGER DEFAULT 0,
+    preskoci BOOLEAN DEFAULT FALSE,
     checksum INTEGER DEFAULT NULL
 );
