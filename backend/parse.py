@@ -380,11 +380,18 @@ for f in files:
                         semestar, predmet]):
 
                         try:
+                            cas_id = getID(studijski_program, 
+                                            studijska_grupa, 
+                                            str(semestar), 
+                                            predmet, 
+                                            cas[0], 
+                                            cas[2], 
+                                            str(cas[7]))
                             sql_db.execute(f"INSERT INTO cas \
-                            ( vrsta_nastave_id, predmet_id, grupa, \
+                            ( id, vrsta_nastave_id, predmet_id, grupa, \
                             dan, vreme_od, vreme_do, ucionica, \
                             izvodjac ) VALUES \
-                            ((SELECT id FROM vrsta_nastave WHERE \
+                            ({cas_id}, (SELECT id FROM vrsta_nastave WHERE \
                             vrsta_nastave = '{cas[0]}'),\
                             {predmet_id}, '{cas[2]}', {cas[1]}, \
                             {cas[3]}, {cas[4]}, '{cas[5]}', '{cas[6]}')")
