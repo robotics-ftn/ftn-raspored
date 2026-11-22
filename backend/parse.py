@@ -298,7 +298,7 @@ sql_db = sql_connector.cursor()
 with open('database/scripts/create.sql', 'r') as db_init:
     sql_db.executescript(db_init.read())
 
-sql_db.execute("SELECT id, pdf_naziv, checksum FROM izvorni_dokument")
+sql_db.execute("SELECT id, pdf_naziv, obradjeno, preskoci FROM izvorni_dokument")
 files = sql_db.fetchall()
 
 sql_db.executemany("INSERT OR IGNORE INTO vrsta_nastave \
@@ -322,7 +322,11 @@ for f in files:
 
     csum = checksum(f'storage/{f[1]}.pdf')
 
-    if csum == f[2] and not '--force' in opts:
+    if f[3]:
+        print('excluded')
+        continue
+
+    if f[2] and not '--force' in opts:
         print('skip')
         continue
 
@@ -391,7 +395,7 @@ for f in files:
 
     sql_db.execute(f"UPDATE izvorni_dokument SET \
     obradjeno = {int(time.time())}, checksum = {csum} \
-    WHERE naziv = '{f[1]}'")
+    WHERE id = '{f[0]}'")
 
     sql_connector.commit()
 
