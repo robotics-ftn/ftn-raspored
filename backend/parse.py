@@ -8,6 +8,7 @@ import time
 import sys
 import hashlib
 import cyrtranslit
+from collections import defaultdict
 
 days = ['P O N', 'U T O', 'S R E', 'Č E T', 'P E T', 'S U B', 'N E D']
 clas = ['Pred.', 'lab.vežbe', 'aud.vežbe', 'rač.vežbe', 'arh.vežbe', 'um.vežbe']
@@ -224,13 +225,28 @@ def parseDocument(filename):
 
     db_entries = []
 
-    with pdfplumber.open('rac.pdf') as source:
+    with pdfplumber.open(filename) as source:
 
-        for page in source.pages[1:5]:
+        for page in source.pages:
             db_entries.extend(parsePage(page))
 
-        return db_entries
+        count_map = defaultdict(int)
+        db_entries_new = []
 
+        for db_entrie in db_entries:
+            keys = (db_entrie[0], 
+                    db_entrie[1], 
+                    db_entrie[2], 
+                    db_entrie[3], 
+                    db_entrie[4], 
+                    db_entrie[6])
+            
+            count_map[keys] += 1
+            
+            new_tupl = db_entrie + (count_map[keys],)
+            db_entries_new.append(new_tupl)
+
+        return db_entries_new
 
 def checksum(filename):
 
@@ -314,10 +330,7 @@ for f in files:
         sql_db.executescript(db_clean.read().replace( \
         '$IZVORNI_DOKUMENTI', f"({f[0]})"))
 
-    with pdfplumber.open(f'storage/{f[1]}.pdf') as source:
-
-        for page in source.pages:
-            db_entries.extend(parsePage(page))
+    db_entries = parseDocument(f'storage/{f[1]}.pdf')
 
     for studijski_program in getUnique(db_entries, 0):
 
